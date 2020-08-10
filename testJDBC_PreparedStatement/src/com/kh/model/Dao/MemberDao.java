@@ -219,39 +219,88 @@ public class MemberDao {
         }
         return m;
     }
-    public int updateMember(Member m) {
-        int result=0;
-        Connection conn = null;
-        PreparedStatement pStmt = null;
-        String sql = "UPDATE ";
-        try {
+    public int updateMember(Member mem)
+    {
+        int result = 0;
 
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        String sql = "UPDATE MEMBER SET PASSWORD = ?, EMAIL = ?, PHONE = ?, ADDRESS = ? WHERE USERID = ?";
+
+        try
+        {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            conn = DriverManager.getConnection("jdbc:oracle:thin:@127.0.0.1:1521:xe", "JDBC", "JDBC");
-            pStmt = conn.prepareStatement(sql);
-            pStmt.setString();
-            result = pStmt.executeUpdate();
-            if (result > 0) {
+            conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:XE", "JDBC", "JDBC");
+            pstmt = conn.prepareStatement(sql);
+
+            pstmt.setString(1, mem.getPassword());
+            pstmt.setString(2, mem.getEmail());
+            pstmt.setString(3, mem.getPhone());
+            pstmt.setString(4, mem.getAddress());
+            pstmt.setString(5, mem.getUserId());
+
+            result = pstmt.executeUpdate();
+
+            if(result > 0)
+            {
                 conn.commit();
-            } else {
+            }
+            else
+            {
                 conn.rollback();
             }
-
-        } catch (ClassNotFoundException e) {
+        }
+        catch(ClassNotFoundException e)
+        {
             e.printStackTrace();
-
-        } catch (SQLException e) {
+        }
+        catch(SQLException e)
+        {
             e.printStackTrace();
-        } finally {
-            try {
-                stmt.close();
+        }
+        finally
+        {
+            try
+            {
+                pstmt.close();
                 conn.close();
-
-
-            } catch (SQLException e) {
+            }
+            catch(SQLException e)
+            {
                 e.printStackTrace();
             }
+        }
 
+        return result;
+    }
+
+    public int deleteMember(String id) {
+        int result = 0;
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        String sql = "DELETE FROM MEMBER WHERE USERID=?";
+
+        try {
+            Class.forName("oracle.jdbc.driver.OracleDriver");
+            conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:xe","JDBC","JDBC");
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1,id);
+
+            result = pstmt.executeUpdate();
+
+            if(result > 0) conn.commit();
+            else conn.rollback();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            try{
+                pstmt.close();
+                conn.close();
+            }catch (SQLException e){
+                e.printStackTrace();
+            }
         }
         return result;
     }

@@ -62,4 +62,13 @@ public class MemberController {
             new MemberMenu().displayError("회원 수정 실패"); // 실패메세지 출력 view 호출
         }
     }
+    public void deleteMember(String id){
+        int result = new MemberDao().deleteMember(id);
+
+        if(result > 0){
+            new MemberMenu().displaySuccess("회원 탈퇴 성공!");
+        }else{
+            new MemberMenu().displayError("회원 탈퇴 실패!");
+        }
+    }
 }

@@ -40,8 +40,8 @@ public class MemberMenu {
                 case 5: Member mem = updateMember();
                     mController.updateMember(mem);
                     break;
-//                case 6:mController.deleteMember(inputMemberId());
-//                    break;
+                case 6:mController.deleteMember(inputMemberId());
+                    break;
                 case 7:
                     break;
                 case 8:
