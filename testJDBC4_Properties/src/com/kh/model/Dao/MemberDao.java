@@ -1,23 +1,83 @@
 package com.kh.model.Dao;
 
 import com.kh.model.vo.Member;
-import oracle.jdbc.proxy.annotation.Pre;
-import sun.tools.tree.Vset;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Properties;
 
-import static com.kh.common.JDBCTemplate.close;
+import static com.kh.common.JDBCTemplate.*;
 
 public class MemberDao {
+    private Properties prop = new Properties();
+
+    public MemberDao() {
+        try {
+            prop.load(new FileReader("resources/query.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int insertMember(Connection conn, Member m) {
+        int result = 0;
+        PreparedStatement pStmt = null;
+//        String sql = "INSERT INTO MEMBER VALUES(?,?,?,?,?,?,?,?,?,SYSDATE)";
+        String sql = prop.getProperty("insertMember");
+        try {
+            pStmt = conn.prepareStatement(sql);
+            pStmt.setString(1, m.getUserId());
+            pStmt.setString(2, m.getPassword());
+            pStmt.setString(3, m.getUserName());
+            pStmt.setString(4, m.getGender());
+            pStmt.setInt(5, m.getAge());
+            pStmt.setString(6, m.getEmail());
+            pStmt.setString(7, m.getPhone());
+            pStmt.setString(8, m.getAddress());
+            pStmt.setString(9, m.getHobby());
+
+            result = pStmt.executeUpdate();
+            if (result > 0) {
+                commit(conn);
+            } else {
+                rollback(conn);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(pStmt);
+        }
+
+        return result;
+    }
+
+    public int deleteMember(Connection conn, String id) {
+        int result = 0;
+        PreparedStatement pStmt = null;
+        String sql = prop.getProperty("deleteMember");
+        try {
+            pStmt = conn.prepareStatement(sql);
+            pStmt.setString(1, id);
+            result = pStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(pStmt);
+
+        }
+        return result;
+    }
+
     public ArrayList<Member> selectAll(Connection conn) {
         ArrayList<Member> list = new ArrayList<>();
         PreparedStatement pStmt = null;
         ResultSet rset = null;
-        String sql = "SELECT * FROM MEMBER";
+        String sql = prop.getProperty("selectAll");
         try {
             pStmt = conn.prepareStatement(sql);
             rset = pStmt.executeQuery();
@@ -36,22 +96,16 @@ public class MemberDao {
                 m.setAddress(rset.getString("ADDRESS"));
                 m.setHobby(rset.getString("HOBBY"));
                 m.setEnrollDate(rset.getDate("ENROLLDATE"));
+                m.setDelFlag(rset.getString("DEL_FLAG"));
                 // 리스트에 해당 회원 한명씩 추가
                 list.add(m);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            try {
-                rset.close();
-                pStmt.close();
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
+            close(rset);
+            close(pStmt);
         }
-
         return list;
     }
 
@@ -59,7 +113,7 @@ public class MemberDao {
         Member m = new Member();
         PreparedStatement pStmt = null;
         ResultSet rSet = null;
-        String sql = "SELECT * FROM MEMBER WHERE USERID=?";
+        String sql = prop.getProperty("selectOne");
         try {
             pStmt = conn.prepareStatement(sql);
             pStmt.setString(1, id);
@@ -79,57 +133,19 @@ public class MemberDao {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-
         } finally {
-            try {
-                rSet.close();
-                pStmt.close();
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            close(rSet);
+            close(pStmt);
         }
         return m;
     }
-
-    public int insertMember(Connection conn, Member m) {
-        int result = 0;
-        PreparedStatement pStmt = null;
-        String sql = "INSERT INTO MEMBER VALUES(?,?,?,?,?,?,?,?,?,SYSDATE)";
-        try {
-            pStmt = conn.prepareStatement(sql);
-            pStmt.setString(1, m.getUserId());
-            pStmt.setString(2, m.getPassword());
-            pStmt.setString(3, m.getUserName());
-            pStmt.setString(4, m.getGender());
-            pStmt.setInt(5, m.getAge());
-            pStmt.setString(6, m.getEmail());
-            pStmt.setString(7, m.getPhone());
-            pStmt.setString(8, m.getAddress());
-            pStmt.setString(9, m.getHobby());
-
-            result = pStmt.executeUpdate();
-            if (result > 0) {
-                conn.commit();
-            } else conn.rollback();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                pStmt.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        return result;
-    }
-
 
     public ArrayList<Member> selectByName(Connection conn, String name) {
         ArrayList<Member> list = new ArrayList<>();
         PreparedStatement pStmt = null;
         ResultSet rSet = null;
-        String sql = "SELECT * FROM MEMBER WHERE USERNAME LIKE ?";
+
+        String sql = prop.getProperty("selectByName");
         try {
             pStmt = conn.prepareStatement(sql);
             pStmt.setString(1, "%" + name + "%");
@@ -144,28 +160,23 @@ public class MemberDao {
                         rSet.getString("PHONE"),
                         rSet.getString("ADDRESS"),
                         rSet.getString("HOBBY"),
-                        rSet.getDate("ENROLLDATE"))
+                        rSet.getDate("ENROLLDATE"),
+                        rSet.getString("DEL_FLAG"))
                 );
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            try {
-                rSet.close();
-                pStmt.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            close(rSet);
+            close(pStmt);
         }
-
         return list;
     }
 
     public int updateMember(Connection conn, Member mem) {
         int result = 0;
         PreparedStatement pStmt = null;
-        String sql = "UPDATE MEMBER SET PASSWORD = ?, EMAIL = ?, PHONE = ?, ADDRESS = ? WHERE USERID = ?";
-
+        String sql = prop.getProperty("updateMember");
         try {
             pStmt = conn.prepareStatement(sql);
             pStmt.setString(1, mem.getPassword());
@@ -178,31 +189,10 @@ public class MemberDao {
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            try {
 
-                pStmt.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return result;
-    }
-
-    public int deleteMember(Connection conn, String id) {
-        int result = 0;
-        PreparedStatement pStmt = null;
-        String sql = "DELETE FROM MEMBER WHERE USERID=?";
-        try {
-            pStmt = conn.prepareStatement(sql);
-            pStmt.setString(1, id);
-            result = pStmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
             close(pStmt);
-
         }
+
         return result;
     }
 
@@ -213,8 +203,7 @@ public class MemberDao {
 
         ResultSet rSet = null;
 
-        String sql = "SELECT * FROM MEMBER WHERE USERID = ? AND PASSWORD =?";
-
+        String sql = prop.getProperty("login");
         try {
             pStmt = conn.prepareStatement(sql);
             pStmt.setString(1, m.getUserId());
@@ -234,14 +223,16 @@ public class MemberDao {
                 );
             }
 
-        } catch (SQLException e) {
+        }catch (SQLException e){
             e.printStackTrace();
-        } finally {
+        }finally {
             close(rSet);
             close(pStmt);
+
         }
-
-
         return mem;
     }
+//    삭제의 경우 두가지 방식으로 나눌 수 있음.
+    // 1. 실제로 테이블에서 삭제하면서, 삭제회원테이블로 insert(이동)
+    // 2. Member테이블에 flag컬럼을 두고 탈퇴한 회원여부를 정의
 }

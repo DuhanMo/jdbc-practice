@@ -174,4 +174,3 @@ public class MemberMenu {
         System.out.println("\n" + loginMem.getUserName() + "님 환영합니다.");
     }
 }
-

@@ -81,9 +81,19 @@ public class MemberService {
         int result = new MemberDao().deleteMember(conn,id);
         if(result>0){
             commit(conn);
-        }else rollback(conn);
+        }else {
+            rollback(conn);
+        }
         close(conn);
         return result;
+    }
+
+    public Member login(Member m) {
+        Connection conn = getConnection();
+        Member mem = new MemberDao().login(conn,m);
+
+        close(conn);
+        return mem;
     }
 }
 
